@@ -20,6 +20,10 @@ body {
 .btlw-debug {
     display: none;
 }
+
+footer {
+    display: none;
+}
     
 .btlw-header {
     text-indent: 10px;
@@ -32,214 +36,117 @@ body {
 .bingo-row {
     justify-content: center;
     display: grid;
-    grid: 80px / 40px 40px 40px 40px 40px;
+    grid: 80px / 80px 80px 80px 80px 80px;
+}
+
+.bingo-box-dark {
+    background-color: #a0a0df;
+}
+
+.bingo-box-light {
+    background-color: #ffffff;
 }
     
 </style>
 """
 
 row = 0
-column = 0
+num_pools = 0
 
-def column_rand(cord: int) -> str:
-    if cord == 0:
-        return str(random.randint(1,15))
-    elif cord == 1:
-        return str(random.randint(16,30))
-    elif cord == 2:
-        return str(random.randint(31,45))
-    elif cord == 3:
-        return str(random.randint(46,60))
-    elif cord == 4:
-        return str(random.randint(61,75))
+def generate_number_pools():
+     number_pools = {
+        0: random.sample(range(1, 16), 5),
+        1: random.sample(range(16, 31), 5),
+        2: random.sample(range(31, 46), 5),
+        3: random.sample(range(46, 61), 5),
+        4: random.sample(range(61, 76), 5),
+    }
+     return number_pools
+
+def get_num(col: int, row: int) -> str:
+    global num_pools
+    return str(num_pools[col][row])
 
 def create_bingo_board():
+    global row
+    global num_pools
+    num_pools = generate_number_pools()
     rows = []
+    row = 0
     for i in range(5):
         rows.append(create_row())
-    return Div(rows)
+    return Div(
+        *rows
+        )
 
 def create_row():
     global row
     boxes = []
-    for i in range(5):
-        boxes.append(box())
+        
+    for col in range(5):
+        boxes.append(box(row, col))
+        
     row += 1
     return Span(
-                boxes,
+                *boxes,
                 classes="bingo-row"
             )
 
-def box():
-    global column
-    num = column_rand(column)
-    name = "board" + str(column) + str(row)
-    if row == 2 and column == 2:
+def box(row: int, col: int):
+    num = get_num(col,row)
+    name = "board" + str(col) + str(row)
+    
+    if row == 2 and col == 2:
         num = "★"
         box = True
     else:
         box = False
-    column += 1
+        
+    if row % 2 == 0 and col % 2 == 0:
+        bingo_box_type = "bingo-box-dark"
+    elif row % 2 != 0 and col % 2 != 0:
+        bingo_box_type = "bingo-box-dark"
+    else:
+        bingo_box_type = "bingo-box-light"
+        
     return Div(
                 num,
-                Div(CheckBox(name, box))
+                Div(CheckBox(name, box)),
+                classes = bingo_box_type
             )
 
 @dataclass
 class State:
-    image: PIL_Image
-    input_message: str
-    encoded_data: str
-    decoded_message: str
+    name: str
+    highscore: int
     
 @route
 def index(state: State) -> Page:
     return Page(state, [
-        "Bingo", #first number is row, second number is column
+        BINGO_PAGE_CSS,
+        "What is your name?",
+        TextBox("name", ""),
+        " ",
+        Button("Play Bingo?", bingo)
+        
+        
+    ])
+
+@route
+def bingo(state: State) -> Page:
+    return Page(state, [
         BINGO_PAGE_CSS,
         
+        state.name,
+        "Highscore: " + str(state.highscore),
+        
         create_bingo_board(),
+        " ",
+        Button("New Board", bingo)
         
-        Span(
-            Div(
-                str(random.randint(1,15)),
-                Div(CheckBox("board00")),
-            ),
-            
-            Div(
-                "★",
-                Div(CheckBox("board00")),
-            ),
-            
-            Div(
-                str(random.randint(1,15)),
-                Div(CheckBox("board00")),
-            ),
-            
-            Div(
-                str(random.randint(1,15)),
-                Div(CheckBox("board00")),
-            ),
-            
-            Div(
-                str(random.randint(1,15)),
-                Div(CheckBox("board00")),
-            ),
-            classes="bingo-row"
-        ),
         
-        LineBreak(),
-        CheckBox("board00"),
-        CheckBox("board01"),
-        CheckBox("board02"),
-        CheckBox("board03"),
-        CheckBox("board04"),
         
-        LineBreak(),
-        Span(
-        str(random.randint(16,30)),
-        " ",
-        str(random.randint(16,30)),
-        " ",
-        str(random.randint(16,30)),
-        " ",
-        str(random.randint(16,30)),
-        " ",
-        str(random.randint(16,30))
-        ),
-        LineBreak(),
-        CheckBox("board10"),
-        CheckBox("board11"),
-        CheckBox("board12"),
-        CheckBox("board13"),
-        CheckBox("board14"),
-        
-        LineBreak(),
-        Span(
-        str(random.randint(31,45)),
-        " ",
-        str(random.randint(31,45)),
-        " ",
-        "Free",
-        " ",
-        str(random.randint(31,45)),
-        " ",
-        str(random.randint(31,45))
-        ),
-        LineBreak(),
-        CheckBox("board20"),
-        CheckBox("board21"),
-        CheckBox("board22", True),
-        CheckBox("board23"),
-        CheckBox("board24"),
-        
-        LineBreak(),
-        Span(
-        str(random.randint(46,60)),
-        " ",
-        str(random.randint(46,60)),
-        " ",
-        str(random.randint(46,60)),
-        " ",
-        str(random.randint(46,60)),
-        " ",
-        str(random.randint(46,60))
-        ),
-        LineBreak(),
-        CheckBox("board30"),
-        CheckBox("board31"),
-        CheckBox("board32"),
-        CheckBox("board33"),
-        CheckBox("board34"),
-        
-        LineBreak(),
-        Span(
-        str(random.randint(61,75)),
-        " ",
-        str(random.randint(61,75)),
-        " ",
-        str(random.randint(61,75)),
-        " ",
-        str(random.randint(61,75)),
-        " ",
-        str(random.randint(61,75))
-        ),
-        LineBreak(),
-        CheckBox("board40"),
-        CheckBox("board41"),
-        CheckBox("board42"),
-        CheckBox("board43"),
-        CheckBox("board44"),
     ])
 
-@route
-def display_message_page(state: State, encode_image: bytes) -> Page:
-    state.image = PIL_Image.open(io.BytesIO(encode_image)).convert('RGB')
-
-    return Page(state, [
-        "Image Loaded! Now enter your message:",
-        Text(state.input_message),
-        Button("Back", index)
-    ])
-
-@route
-def display_message(state: State) -> Page:
-    return Page(state, [
-        f"Your message: {state.input_message}",
-        Button("Back", index)
-    ])
-
-@route
-def decode_page(state: State, decode_image: bytes) -> Page:
-    state.image = PIL_Image.open(io.BytesIO(decode_image)).convert("RGB")
-
-    # placeholder – your decoding goes later
-    state.decoded_message = "(decoded message will go here)"
-
-    return Page(state, [
-        "Decoded Message:",
-        Text(state.decoded_message),
-        Button("Back", index)
-    ])
-
-start_server(State(None, "", "", ""))
+server = State("", "")
+start_server(server)
