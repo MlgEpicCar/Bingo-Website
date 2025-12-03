@@ -125,7 +125,7 @@ def index(state: State) -> Page:
     return Page(state, [
         BINGO_PAGE_CSS,
         "What is your name?",
-        TextBox("name", ""),
+        TextBox("name", state.name),
         " ",
         Button("Play Bingo?", bingo)
         
@@ -133,10 +133,12 @@ def index(state: State) -> Page:
     ])
 
 @route
-def bingo(state: State) -> Page:
+def bingo(state: State, name = str) -> Page:
+    
+    state.name = name
+    
     return Page(state, [
         BINGO_PAGE_CSS,
-        
         state.name,
         "Highscore: " + str(state.highscore),
         
@@ -148,5 +150,4 @@ def bingo(state: State) -> Page:
         
     ])
 
-server = State("", "")
-start_server(server)
+start_server(State("", 0))
