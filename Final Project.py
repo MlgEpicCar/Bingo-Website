@@ -50,6 +50,32 @@ footer {
 .bingo-box-light {
     background-color: #ffffff;
 }
+
+.ball {
+    display: flex;
+    background-color: white;
+    margin-left: 20px;
+    border-radius: 100px;
+    justify-content: center;
+    align-items: center;
+    height: 75px;
+    width: 75px;
+    border-width: 5px;
+    border-color: #eeeeee;
+}
+
+.board-and-balls {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px; /* space between board and balls */
+}
+
+.ball-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
     
 </style>
 """
@@ -220,7 +246,22 @@ def bingo_page(state: State, name: str) -> Page:
         state.name,
         TextBox("name", state.name, classes="goaway"),
         "Highscore: " + str(state.highscore),
-        render_saved_board(state.board),
+        
+        Div(
+            render_saved_board(state.board),
+
+            Div(
+                Div("18", classes="ball"),
+                Div("42", classes="ball"),
+                Div("7", classes="ball"),
+                Div("63", classes="ball"),
+                Div("67", classes="ball"),
+                classes="ball-column"
+            ),
+
+            classes="board-and-balls"
+        ),
+        
         " ",
         Button("BINGO!!!!", check_page),
         Button("Next Ball", bingo_page)
