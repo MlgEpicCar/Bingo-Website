@@ -24,6 +24,10 @@ body {
 footer {
     display: none;
 }
+
+.goaway {
+    display: none;
+}
     
 .btlw-header {
     text-indent: 10px;
@@ -50,8 +54,31 @@ footer {
 </style>
 """
 
+@dataclass
+class State:
+    name: str
+    highscore: int
+    board: list
+    
+@dataclass
+class Box:
+    num: int
+    col: int
+    row: int
+    called: bool = False
+
+board = Div()
+board_list = []
 row = 0
 num_pools = 0
+
+def check_if_bingo() -> bool:
+    pass
+    return False
+
+def check_if_called(box: Box):
+    pass
+    return False
 
 def generate_number_pools():
      number_pools = {
@@ -68,11 +95,15 @@ def get_num(col: int, row: int) -> str:
     return str(num_pools[col][row])
 
 def create_bingo_board():
+    global board_list
     global row
     global num_pools
-    num_pools = generate_number_pools()
-    rows = []
+    
+    board_list = []
     row = 0
+    num_pools = generate_number_pools()
+    
+    rows = []
     for i in range(5):
         rows.append(create_row())
     return Div(
@@ -93,12 +124,18 @@ def create_row():
             )
 
 def box(row: int, col: int):
+    global board_list
+    
+    board_list.append(Box(get_num(col,row), col, row))
+    
     num = get_num(col,row)
-    name = "board" + str(col) + str(row)
+    name = "board" + str(col) + str(row) #not relevant but needed for compile
+    
+    
     
     if row == 2 and col == 2:
         num = "★"
-        box = True
+        box = False
     else:
         box = False
         
@@ -115,10 +152,33 @@ def box(row: int, col: int):
                 classes = bingo_box_type
             )
 
-@dataclass
-class State:
-    name: str
-    highscore: int
+def render_saved_board(board_data):
+    rows = []
+    for row in range(5):
+        row_boxes = []
+        for col in range(5):
+            box = board_data[row * 5 + col]
+            
+            if row == 2 and col == 2:
+                display_num = "★"
+            else:
+                display_num = box.num
+                
+            if (row % 2 == 0 and col % 2 == 0) or (row % 2 == 1 and col % 2 == 1):
+                bingo_box_type = "bingo-box-dark"
+            else:
+                bingo_box_type = "bingo-box-light"
+            
+            row_boxes.append(
+                Div(
+                    display_num,
+                    Div(CheckBox("fillername", box.called)),
+                    classes = bingo_box_type
+                )
+            )
+        rows.append(Span(*row_boxes, classes="bingo-row"))
+    return Div(*rows)
+
     
 @route
 def index(state: State) -> Page:
@@ -127,27 +187,58 @@ def index(state: State) -> Page:
         "What is your name?",
         TextBox("name", state.name),
         " ",
-        Button("Play Bingo?", bingo)
-        
-        
+        Button("Play Bingo?", select_board_page)
     ])
 
 @route
-def bingo(state: State, name = str) -> Page:
+def select_board_page(state: State, name: str) -> Page:
+    global board
+    
+    state.name = name
+    board = create_bingo_board()
+    state.board = board_list
+    
+    return Page(state, [
+        BINGO_PAGE_CSS,
+        state.name,
+        TextBox("name", state.name, classes="goaway"),
+        "Choose your Board",
+        
+        board,
+        " ",
+        Button("Confirm", bingo_page),
+        Button("New Board", select_board_page)
+    ])
+
+@route
+def bingo_page(state: State, name: str) -> Page:
     
     state.name = name
     
     return Page(state, [
         BINGO_PAGE_CSS,
         state.name,
+        TextBox("name", state.name, classes="goaway"),
         "Highscore: " + str(state.highscore),
-        
-        create_bingo_board(),
+        render_saved_board(state.board),
         " ",
-        Button("New Board", bingo)
-        
-        
-        
+        Button("BINGO!!!!", check_page),
+        Button("Next Ball", bingo_page)
     ])
 
-start_server(State("", 0))
+@route
+def check_page(state: State, name: str) -> Page:
+    
+    state.name = name
+    
+    return Page(state, [
+        BINGO_PAGE_CSS,
+        state.name,
+        TextBox("name", state.name, classes="goaway"),
+        "Highscore: " + str(state.highscore),
+        "You Win!!!"
+        " ",
+        Button("BINGO!!!!", check_page)
+    ])
+
+start_server(State("", 0, []))
