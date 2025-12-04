@@ -106,6 +106,15 @@ def check_if_called(box: Box):
     pass
     return False
 
+def gen_ball():
+    if len(drawn_balls) == 75:
+        return 0
+    drawn_balls = []
+    while ball in drawn_balls:
+        ball = random.randint(1, 75)
+    drawn_balls.append(ball)
+    return ball
+
 def generate_number_pools():
      number_pools = {
         0: random.sample(range(1, 16), 5),
@@ -279,7 +288,7 @@ def check_page(state: State, name: str) -> Page:
         "Highscore: " + str(state.highscore),
         "You Win!!!"
         " ",
-        Button("BINGO!!!!", check_page)
+        Button("Play Again", index)
     ])
 
 start_server(State("", 0, []))
