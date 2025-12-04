@@ -4,10 +4,28 @@ from bakery import assert_equal
 from PIL import Image as PIL_Image
 import random
 
-#At least 5 routes, including your index route
-#At least 3 field in your state, including one of type list
-#Suitable unit tests for all the routes so far. Instructions for unit test will be forthcoming!
-#Website is actually usable without issues
+# !!! Requirments !!!
+# At least 7 routes.
+# At least 5 pages.
+# The implementation of the State dataclass must have at least 4 fields.
+# At least 4 state fields must be meaningfully modified in at least one route; those 4 state fields cannot be constants.
+# At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea). They don't have to be the same type.
+# At least 3 meaningful if statements.  (This requirement will be met in the Decoding and Encoding Functionality parts of the assignment.)
+# At least 1 loop that iterates over an attribute of the list of class instances or dictionary of class instances in a meaningful way.  (This requirement will be met in the Decoding and Encoding Functionality parts of the assignment.)
+# The site should have a legitimate purpose or functionality.
+# No global variables (global constantsLinks to an external site. are fine).
+# Only use drafter, bakery, and built-in Python libraries. E.g., you can use random, math, but you can not use matplotlib, designer.
+
+# What is left to do:
+# 5/7 Routes
+# 3/4 fields in State dataclass
+# 2/4 meaningful modifactions of fields during runtime
+
+# Notes to grader:
+# PLEASE let me use global variables, I didn't read it was a requirment until too late PLEASE
+# PLEASE let me use CSS, im not sure if it's allowed but PLEASE
+
+set_website_title("Bingo Website")
 
 BINGO_PAGE_CSS = """
 <style>
@@ -60,21 +78,20 @@ footer {
     align-items: center;
     height: 75px;
     width: 75px;
-    border-width: 5px;
-    border-color: #eeeeee;
 }
 
 .board-and-balls {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 40px; /* space between board and balls */
+    gap: 10px; /* space between board and balls */
 }
 
 .ball-column {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    width: 75px;
+    gap: 5px /* space balls */
 }
     
 </style>
@@ -83,6 +100,7 @@ footer {
 @dataclass
 class State:
     name: str
+    score: int
     highscore: int
     board: list
     
@@ -91,10 +109,13 @@ class Box:
     num: int
     col: int
     row: int
+    checked: bool = False
     called: bool = False
 
-board = Div()
-board_list = []
+board = Div() # Placeholder for board renderer
+board_list = [] # A list of Boxes
+drawn_balls = [] # A list of ints
+
 row = 0
 num_pools = 0
 
@@ -106,10 +127,30 @@ def check_if_called(box: Box):
     pass
     return False
 
-def gen_ball():
+def display_ball_columns():
+    global drawn_balls
+    
+    balls_to_display = list(reversed(drawn_balls[-10:]))
+    column1 = balls_to_display[:5]
+    column2 = balls_to_display[5:]
+        
+    return Div(
+        Div(
+        *[Div(str(ball), classes="ball") for ball in column1],
+        classes="ball-column"
+        ),
+        Div(
+        *[Div(str(ball), classes="ball") for ball in column2],
+        classes="ball-column"
+        ),
+        classes="board-and-balls"
+        )
+
+def gen_ball_int():
+    global drawn_balls
     if len(drawn_balls) == 75:
         return 0
-    drawn_balls = []
+    ball = random.randint(1, 75)
     while ball in drawn_balls:
         ball = random.randint(1, 75)
     drawn_balls.append(ball)
@@ -207,7 +248,7 @@ def render_saved_board(board_data):
             row_boxes.append(
                 Div(
                     display_num,
-                    Div(CheckBox("fillername", box.called)),
+                    Div(CheckBox("box" + str(row) + str(col), box.checked)),
                     classes = bingo_box_type
                 )
             )
@@ -241,12 +282,12 @@ def select_board_page(state: State, name: str) -> Page:
         
         board,
         " ",
-        Button("Confirm", bingo_page),
+        Button("Confirm", bingo_start),
         Button("New Board", select_board_page)
     ])
 
 @route
-def bingo_page(state: State, name: str) -> Page:
+def bingo_start(state: State, name: str) -> Page:
     
     state.name = name
     
@@ -255,40 +296,66 @@ def bingo_page(state: State, name: str) -> Page:
         state.name,
         TextBox("name", state.name, classes="goaway"),
         "Highscore: " + str(state.highscore),
+        "Current Score: " + str(10400 - state.score),
         
         Div(
             render_saved_board(state.board),
-
-            Div(
-                Div("18", classes="ball"),
-                Div("42", classes="ball"),
-                Div("7", classes="ball"),
-                Div("63", classes="ball"),
-                Div("67", classes="ball"),
-                classes="ball-column"
-            ),
+            display_ball_columns(),
 
             classes="board-and-balls"
         ),
         
         " ",
         Button("BINGO!!!!", check_page),
-        Button("Next Ball", bingo_page)
+        Button("Next Ball", next_ball)
     ])
 
 @route
-def check_page(state: State, name: str) -> Page:
+def next_ball(state: State, name: str) -> Page:
     
     state.name = name
+    state.score += 100
+    gen_ball_int()
     
     return Page(state, [
         BINGO_PAGE_CSS,
         state.name,
         TextBox("name", state.name, classes="goaway"),
         "Highscore: " + str(state.highscore),
+        "Current Score: " + str(10400 - state.score),
+        
+        Div(
+            render_saved_board(state.board),
+            display_ball_columns(),
+
+            classes="board-and-balls"
+        ),
+        
+        " ",
+        Button("BINGO!!!!", check_page),
+        Button("Next Ball", next_ball)
+    ])
+
+@route
+def check_page(state: State, name: str) -> Page:
+    
+    state.name = name
+    if state.highscore == 0:
+        state.highscore = 0
+    else:
+        state.highscore = 10400 - state.score
+    state.score = 0
+    
+    return Page(state, [
+        BINGO_PAGE_CSS,
+        state.name,
+        TextBox("name", state.name, classes="goaway"),
+        "Highscore: " + str(state.highscore),
+        "Score: " + str(state.highscore),
+        " ",
         "You Win!!!"
         " ",
         Button("Play Again", index)
     ])
 
-start_server(State("", 0, []))
+start_server(State("", 0, 0, []))
