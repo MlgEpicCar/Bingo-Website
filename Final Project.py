@@ -120,11 +120,39 @@ row = 0
 num_pools = 0
 
 def check_if_bingo() -> bool:
-    pass
-    return False
+    global board_list
+    global drawn_balls
 
-def check_if_called(box: Box):
-    pass
+    # Build 5x5 grid of booleans: True if the box is considered checked
+    grid = [[False]*5 for _ in range(5)]
+    
+    for box in board_list:
+        # FREE SPACE is always considered checked
+        if box.row == 2 and box.col == 2:
+            grid[box.row][box.col] = True
+        else:
+            try:
+                # Mark as checked if the number has been drawn
+                grid[box.row][box.col] = int(box.num) in drawn_balls
+            except ValueError:
+                grid[box.row][box.col] = False
+
+    # Check rows
+    for row in range(5):
+        if all(grid[row]):
+            return True
+
+    # Check columns
+    for col in range(5):
+        if all(grid[row][col] for row in range(5)):
+            return True
+
+    # Check diagonals
+    if all(grid[i][i] for i in range(5)):
+        return True
+    if all(grid[i][4-i] for i in range(5)):
+        return True
+
     return False
 
 def display_ball_columns():
@@ -228,8 +256,10 @@ def box(row: int, col: int):
                 classes = bingo_box_type
             )
 
-def render_saved_board(board_data):
+def render_saved_board(board_data: list):
+    global drawn_balls
     rows = []
+    
     for row in range(5):
         row_boxes = []
         for col in range(5):
@@ -237,8 +267,10 @@ def render_saved_board(board_data):
             
             if row == 2 and col == 2:
                 display_num = "★"
+                is_checked = True
             else:
                 display_num = box.num
+                is_checked = int(box.num) in drawn_balls[0:-1]
                 
             if (row % 2 == 0 and col % 2 == 0) or (row % 2 == 1 and col % 2 == 1):
                 bingo_box_type = "bingo-box-dark"
@@ -248,7 +280,7 @@ def render_saved_board(board_data):
             row_boxes.append(
                 Div(
                     display_num,
-                    Div(CheckBox("box" + str(row) + str(col), box.checked)),
+                    Div(CheckBox("box" + str(row) + str(col), is_checked)),
                     classes = bingo_box_type
                 )
             )
@@ -258,6 +290,9 @@ def render_saved_board(board_data):
     
 @route
 def index(state: State) -> Page:
+    global drawn_balls
+    drawn_balls = []
+    
     return Page(state, [
         BINGO_PAGE_CSS,
         "What is your name?",
@@ -355,6 +390,7 @@ def check_page(state: State, name: str) -> Page:
         " ",
         "You Win!!!"
         " ",
+        str(check_if_bingo()),
         Button("Play Again", index)
     ])
 
