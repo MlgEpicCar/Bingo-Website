@@ -373,25 +373,43 @@ def next_ball(state: State, name: str) -> Page:
 
 @route
 def check_page(state: State, name: str) -> Page:
-    
     state.name = name
+    
     if state.highscore == 0:
         state.highscore = 0
     else:
         state.highscore = 10400 - state.score
     state.score = 0
     
+    if check_if_bingo():
+        return win_page(state)
+    else:
+        return lose_page(state)
+    
+
+@route
+def win_page(state: State) -> Page:
     return Page(state, [
         BINGO_PAGE_CSS,
         state.name,
         TextBox("name", state.name, classes="goaway"),
         "Highscore: " + str(state.highscore),
-        "Score: " + str(state.highscore),
+        "You Win!!! 🎉",
         " ",
-        "You Win!!!"
-        " ",
-        str(check_if_bingo()),
         Button("Play Again", index)
+    ])
+
+
+@route
+def lose_page(state: State) -> Page:
+    return Page(state, [
+        BINGO_PAGE_CSS,
+        state.name,
+        TextBox("name", state.name, classes="goaway"),
+        "Highscore: " + str(state.highscore),
+        "Sorry, no Bingo yet 😢",
+        " ",
+        Button("Try Again", bingo_start)
     ])
 
 start_server(State("", 0, 0, []))
