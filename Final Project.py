@@ -5,6 +5,8 @@ from PIL import Image as PIL_Image
 import random
 
 set_website_title("Bingo Website")
+hide_debug_information()
+
 
 BINGO_PAGE_CSS = """
 <style>
@@ -12,10 +14,6 @@ BINGO_PAGE_CSS = """
 body {
     background-color: lightblue;
     font-size: 20px;
-}
-
-.btlw-debug {
-    display: none;
 }
 
 footer {
@@ -278,6 +276,7 @@ def render_saved_board(board_data: list):
 def index(state: State) -> Page:
     global drawn_balls
     drawn_balls = []
+    state.score = 0
     
     return Page(state, [
         BINGO_PAGE_CSS,
