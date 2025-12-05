@@ -87,6 +87,17 @@ footer {
     gap: 10px; /* space between board and balls */
 }
 
+.leaderboard {
+    justify-content: center;
+    display: flex;
+    gap: 100px;
+}
+
+.left {
+    justify-content: left;
+    padding-left: 50px;
+}
+
 .ball-column {
     display: flex;
     flex-direction: column;
@@ -110,11 +121,16 @@ class Box:
     col: int
     row: int
     checked: bool = False
-    called: bool = False
+    
+@dataclass
+class Score:
+    name: str
+    score: int
 
 board = Div() # Placeholder for board renderer
 board_list = [] # A list of Boxes
 drawn_balls = [] # A list of ints
+leaderboard = [Score("Hatrickexe", 4500), Score("Tacoman", 3700), Score("Emu", -3036), Score("Gestalten", 5000), Score("Colusius", 6700), Score("Razikof", 1400), Score("Debuggyo", 3100), Score("Theeno", 7500), Score("Besser", 6000), Score("CinnaminiMax", 1400)]
 
 row = 0
 num_pools = 0
@@ -311,14 +327,14 @@ def select_board_page(state: State, name: str) -> Page:
     
     return Page(state, [
         BINGO_PAGE_CSS,
-        state.name,
         TextBox("name", state.name, classes="goaway"),
-        "Choose your Board",
+        state.name + ", Choose your Board",
+        
+        Button("Confirm", bingo_start),
+        Button("New Board", select_board_page),
         
         board,
-        " ",
-        Button("Confirm", bingo_start),
-        Button("New Board", select_board_page)
+        " "
     ])
 
 @route
@@ -328,10 +344,10 @@ def bingo_start(state: State, name: str) -> Page:
     
     return Page(state, [
         BINGO_PAGE_CSS,
-        state.name,
         TextBox("name", state.name, classes="goaway"),
-        "Highscore: " + str(state.highscore),
         "Current Score: " + str(10400 - state.score),
+        Button("BINGO!!!!", check_page),
+        Button("Next Ball", next_ball),
         
         Div(
             render_saved_board(state.board),
@@ -339,10 +355,10 @@ def bingo_start(state: State, name: str) -> Page:
 
             classes="board-and-balls"
         ),
-        
         " ",
-        Button("BINGO!!!!", check_page),
-        Button("Next Ball", next_ball)
+        "Highscore: " + str(state.highscore),
+        
+        " "
     ])
 
 @route
@@ -354,10 +370,10 @@ def next_ball(state: State, name: str) -> Page:
     
     return Page(state, [
         BINGO_PAGE_CSS,
-        state.name,
         TextBox("name", state.name, classes="goaway"),
-        "Highscore: " + str(state.highscore),
         "Current Score: " + str(10400 - state.score),
+        Button("BINGO!!!!", check_page),
+        Button("Next Ball", next_ball),
         
         Div(
             render_saved_board(state.board),
@@ -365,23 +381,20 @@ def next_ball(state: State, name: str) -> Page:
 
             classes="board-and-balls"
         ),
-        
         " ",
-        Button("BINGO!!!!", check_page),
-        Button("Next Ball", next_ball)
+        "Highscore: " + str(state.highscore),
+        " "
     ])
 
 @route
 def check_page(state: State, name: str) -> Page:
+    global leaderboard
     state.name = name
     
-    if state.highscore == 0:
-        state.highscore = 0
-    else:
-        state.highscore = 10400 - state.score
-    state.score = 0
-    
     if check_if_bingo():
+        state.highscore = 10400 - state.score
+        leaderboard.append(Score(state.name,state.highscore))
+        state.score = 0
         return win_page(state)
     else:
         return lose_page(state)
@@ -391,12 +404,12 @@ def check_page(state: State, name: str) -> Page:
 def win_page(state: State) -> Page:
     return Page(state, [
         BINGO_PAGE_CSS,
-        state.name,
         TextBox("name", state.name, classes="goaway"),
-        "Highscore: " + str(state.highscore),
-        "You Win!!! 🎉",
+        Image("https://media.istockphoto.com/id/1252787937/vector/impression.jpg?s=612x612&w=0&k=20&c=fnHTVScp1F_29KIjVF1BX5X3v5YGanAAV6xI5mWykrg="),
+        "You Win!!!",
         " ",
-        Button("Play Again", index)
+        Button("Play Again", index),
+        Button("Leaderboard", leaderboard_page)
     ])
 
 
@@ -404,12 +417,43 @@ def win_page(state: State) -> Page:
 def lose_page(state: State) -> Page:
     return Page(state, [
         BINGO_PAGE_CSS,
-        state.name,
         TextBox("name", state.name, classes="goaway"),
-        "Highscore: " + str(state.highscore),
-        "Sorry, no Bingo yet 😢",
+        Image("https://content.presentermedia.com/content/clipart/00028000/28699/sad_worry_emoji_face_800_clr.png"),
+        "Sorry, no bingo yet, keep going",
+        "I believe in you, twin",
         " ",
-        Button("Try Again", bingo_start)
+        Button("Try Again", bingo_start),
+        Button("Leaderboard", leaderboard_page)
+    ])
+
+@route
+def leaderboard_page(state: State) -> Page:
+    global leaderboard
+
+    sorted_board = sorted(leaderboard, key=lambda score: score.score, reverse=True)
+    top_ten = sorted_board[:10]
+
+    entries = []
+    names = []
+    scores = []
+    for i, entry in enumerate(top_ten, start=1):
+        entries.append(Div(str(i) + "."))
+        names.append(Div(str(entry.name)))
+        scores.append(Div(str(entry.score)))
+
+    return Page(state, [
+        BINGO_PAGE_CSS,
+        Div("Leaderboard - Top Scores", classes="btlw-header"),
+        Div(
+            Div(*entries),
+            Div(*names),
+            Div(*scores),
+            classes="leaderboard",
+        ),
+        TextBox("name", state.name, classes="goaway"),
+        " ",
+        Button("Back to Bingo", bingo_start),
+        Button("Home", index)
     ])
 
 start_server(State("", 0, 0, []))
