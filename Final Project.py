@@ -7,7 +7,6 @@ import random
 set_website_title("Bingo Website")
 hide_debug_information()
 
-
 BINGO_PAGE_CSS = """
 <style>
 
@@ -87,6 +86,15 @@ footer {
 
 @dataclass
 class State:
+    """
+    Represents the state of the website.
+
+    Attributes:
+        name (str): The player's name.
+        score (int): The current score penalty (lower is better).
+        highscore (int): The best score the player has achieved.
+        board (list): A saved list of Box objects representing the board layout.
+    """
     name: str
     score: int
     highscore: int
@@ -94,6 +102,15 @@ class State:
     
 @dataclass
 class Box:
+    """
+    Represents a single space on the Bingo board.
+
+    Attributes:
+        num (int): The number displayed in the box.
+        col (int): The column index of the box (0–4).
+        row (int): The row index of the box (0–4).
+        checked (bool): Whether the box is marked as selected.
+    """
     num: int
     col: int
     row: int
@@ -101,18 +118,40 @@ class Box:
     
 @dataclass
 class Score:
+    """
+    Represents an entry on the leaderboard.
+
+    Attributes:
+        name (str): Player name.
+        score (int): Player score (higher is better).
+    """
     name: str
     score: int
 
 board = Div() # Placeholder for board renderer
 board_list = [] # A list of Boxes
 drawn_balls = [] # A list of ints
-leaderboard = [Score("Hatrickexe", 4500), Score("Tacoman", 3700), Score("Emu", -3036), Score("Gestalten", 5000), Score("Colusius", 6700), Score("Razikof", 1400), Score("Debuggyo", 3100), Score("Theeno", 7500), Score("Besser", 6000), Score("CinnaminiMax", 1400)]
+leaderboard = [Score("Hatrickexe", 4500), Score("Tacoman", 3700), Score("Emu", -3036),
+               Score("Gestalten", 5000), Score("Colusius", 6700), Score("Razikof", 1400),
+               Score("Debuggyo", 3100), Score("Theeno", 7500), Score("Besser", 6000),
+               Score("CinnaminiMax", 1400)
+               ] # Default Leaderboard
 
 row = 0
 num_pools = 0
 
+# --------------------
+# FUNCTIONS
+# --------------------
+
 def check_if_bingo() -> bool:
+    """
+    Check whether the current board state forms a valid Bingo.
+
+    Returns:
+        bool: True if any row, column, or diagonal is fully filled
+              based on the balls drawn so far (with the free space always counted).
+    """
     global board_list
     global drawn_balls
 
@@ -140,6 +179,12 @@ def check_if_bingo() -> bool:
     return False
 
 def display_ball_columns():
+    """
+    Render the last 10 drawn balls in two vertical columns.
+
+    Returns:
+        Div: A layout component containing two Div columns of ball numbers.
+    """
     global drawn_balls
     
     balls_to_display = list(reversed(drawn_balls[-10:]))
@@ -159,6 +204,13 @@ def display_ball_columns():
         )
 
 def gen_ball_int():
+    """
+    Generate a new Bingo ball (1–75) that has not been drawn yet.
+
+    Returns:
+        int: The unique ball number added to drawn_balls,
+             or 0 if all 75 have been drawn.
+    """
     global drawn_balls
     if len(drawn_balls) == 75:
         return 0
@@ -169,20 +221,43 @@ def gen_ball_int():
     return ball
 
 def generate_number_pools():
-     number_pools = {
+    """
+    Create the number distribution for a Bingo board:
+    each column is assigned numbers from its appropriate range.
+
+    Returns:
+        A list of 5 random numbers with no duplicates.
+    """
+    number_pools = {
         0: random.sample(range(1, 16), 5),
         1: random.sample(range(16, 31), 5),
         2: random.sample(range(31, 46), 5),
         3: random.sample(range(46, 61), 5),
         4: random.sample(range(61, 76), 5),
     }
-     return number_pools
+    return number_pools
 
 def get_num(col: int, row: int) -> str:
+    """
+    Get the number assigned to a specific board cell.
+
+    Args:
+        col (int): Column index.
+        row (int): Row index.
+
+    Returns:
+        str: The number at that location (as a string).
+    """
     global num_pools
     return str(num_pools[col][row])
 
 def create_bingo_board():
+    """
+    Generate a full Bingo board and update board_list.
+
+    Returns:
+        Div: A full 5-row 5-column Div structure representing the board layout.
+    """
     global board_list
     global row
     global num_pools
@@ -199,6 +274,12 @@ def create_bingo_board():
         )
 
 def create_row():
+    """
+    Create a single row of the Bingo board UI.
+
+    Returns:
+        Span: A row containing 5 rendered box components.
+    """
     global row
     boxes = []
         
@@ -212,6 +293,17 @@ def create_row():
             )
 
 def box(row: int, col: int):
+    """
+    Render one Bingo board cell, create its Box dataclass entry,
+    and return a styled Div containing the number and checkbox.
+
+    Args:
+        row (int): Row index.
+        col (int): Column index.
+
+    Returns:
+        Div: UI representation of the box.
+    """
     global board_list
     
     board_list.append(Box(get_num(col,row), col, row))
@@ -241,6 +333,16 @@ def box(row: int, col: int):
             )
 
 def render_saved_board(board_data: list):
+    """
+    Re-render a previously saved board layout, showing checkboxes as checked
+    if the number has already been drawn.
+
+    Args:
+        board_data (list): List of Box objects representing the saved board.
+
+    Returns:
+        Div: A visual representation of the restored board.
+    """
     global drawn_balls
     rows = []
     
@@ -271,12 +373,23 @@ def render_saved_board(board_data: list):
         rows.append(Span(*row_boxes, classes="bingo-row"))
     return Div(*rows)
 
+# --------------------
+# ROUTES
+# --------------------
     
 @route
 def index(state: State) -> Page:
+    """
+    Landing page: asks for user name and resets drawn balls.
+
+    Args:
+        state (State): Website state.
+
+    Returns:
+        Page: The rendered index page.
+    """
     global drawn_balls
     drawn_balls = []
-    state.score = 0
     
     return Page(state, [
         BINGO_PAGE_CSS,
@@ -288,6 +401,16 @@ def index(state: State) -> Page:
 
 @route
 def select_board_page(state: State, name: str) -> Page:
+    """
+    Page where user selects a Bingo board.
+
+    Args:
+        state (State): Website state.
+        name (str): Player name.
+
+    Returns:
+        Page: Board selection UI.
+    """
     global board
     
     state.name = name
@@ -308,6 +431,16 @@ def select_board_page(state: State, name: str) -> Page:
 
 @route
 def bingo_start(state: State, name: str) -> Page:
+    """
+    Launch Bingo gameplay page.
+
+    Args:
+        state (State): Website state.
+        name (str): Player's name.
+
+    Returns:
+        Page: Bingo board, score, and buttons.
+    """
     
     state.name = name
     
@@ -315,7 +448,7 @@ def bingo_start(state: State, name: str) -> Page:
         BINGO_PAGE_CSS,
         TextBox("name", state.name, classes="goaway"),
         "Current Score: " + str(10400 - state.score),
-        Button("BINGO!!!!", check_page),
+        Button("BINGO!!!!", check),
         Button("Next Ball", next_ball),
         
         Div(
@@ -332,6 +465,17 @@ def bingo_start(state: State, name: str) -> Page:
 
 @route
 def next_ball(state: State, name: str) -> Page:
+    """
+    Draws the next ball, increases the score penalty,
+    and refreshes the Bingo game page.
+
+    Args:
+        state (State): Website state.
+        name (str): Player name.
+
+    Returns:
+        Page: Updated Bingo page after drawing a ball.
+    """
     
     state.name = name
     state.score += 100
@@ -341,7 +485,7 @@ def next_ball(state: State, name: str) -> Page:
         BINGO_PAGE_CSS,
         TextBox("name", state.name, classes="goaway"),
         "Current Score: " + str(10400 - state.score),
-        Button("BINGO!!!!", check_page),
+        Button("BINGO!!!!", check),
         Button("Next Ball", next_ball),
         
         Div(
@@ -356,7 +500,18 @@ def next_ball(state: State, name: str) -> Page:
     ])
 
 @route
-def check_page(state: State, name: str) -> Page:
+def check(state: State, name: str) -> Page:
+    """
+    Handle BINGO check request.
+
+    If winning:
+        - update highscore
+        - reset score
+        - move to win page
+
+    Else:
+        - move to lose page
+    """
     global leaderboard
     state.name = name
     
@@ -368,9 +523,17 @@ def check_page(state: State, name: str) -> Page:
     else:
         return lose_page(state)
     
-
 @route
 def win_page(state: State) -> Page:
+    """
+    Page shown when the user wins Bingo.
+
+    Args:
+        state (State): Website state.
+
+    Returns:
+        Page: Win page.
+    """
     return Page(state, [
         BINGO_PAGE_CSS,
         TextBox("name", state.name, classes="goaway"),
@@ -381,9 +544,17 @@ def win_page(state: State) -> Page:
         Button("Leaderboard", leaderboard_page)
     ])
 
-
 @route
 def lose_page(state: State) -> Page:
+    """
+    Page shown when the user incorrectly claims Bingo.
+
+    Args:
+        state (State): Website state.
+
+    Returns:
+        Page: Lose page encouraging user to continue.
+    """
     return Page(state, [
         BINGO_PAGE_CSS,
         TextBox("name", state.name, classes="goaway"),
@@ -397,6 +568,15 @@ def lose_page(state: State) -> Page:
 
 @route
 def leaderboard_page(state: State) -> Page:
+    """
+    Display the top 10 scores from the leaderboard.
+
+    Args:
+        state (State): Website state.
+
+    Returns:
+        Page: Leaderboard UI showing rank, name, and score.
+    """
     global leaderboard
 
     sorted_board = sorted(leaderboard, key=lambda score: score.score, reverse=True)
