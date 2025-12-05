@@ -4,6 +4,16 @@ from bakery import assert_equal
 from PIL import Image as PIL_Image
 import random
 
+set_site_information(
+    author="MlgEpicCar",
+    description="""
+    it's a recration of bingo
+    it tracks the board, your name, and scores
+    """,
+    sources=["https://github.com/acbart"],
+    planning=["thank you acbart"],
+    links=["https://github.com/MlgEpicCar/Bingo-Website"]
+)
 set_website_title("Bingo Website")
 hide_debug_information()
 
