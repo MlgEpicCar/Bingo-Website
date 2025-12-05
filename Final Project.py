@@ -4,27 +4,6 @@ from bakery import assert_equal
 from PIL import Image as PIL_Image
 import random
 
-# !!! Requirments !!!
-# At least 7 routes.
-# At least 5 pages.
-# The implementation of the State dataclass must have at least 4 fields.
-# At least 4 state fields must be meaningfully modified in at least one route; those 4 state fields cannot be constants.
-# At least 3 input fields (TextBox, CheckBox, SelectBox, TextArea). They don't have to be the same type.
-# At least 3 meaningful if statements.  (This requirement will be met in the Decoding and Encoding Functionality parts of the assignment.)
-# At least 1 loop that iterates over an attribute of the list of class instances or dictionary of class instances in a meaningful way.  (This requirement will be met in the Decoding and Encoding Functionality parts of the assignment.)
-# The site should have a legitimate purpose or functionality.
-# No global variables (global constantsLinks to an external site. are fine).
-# Only use drafter, bakery, and built-in Python libraries. E.g., you can use random, math, but you can not use matplotlib, designer.
-
-# What is left to do:
-# 5/7 Routes
-# 3/4 fields in State dataclass
-# 2/4 meaningful modifactions of fields during runtime
-
-# Notes to grader:
-# PLEASE let me use global variables, I didn't read it was a requirment until too late PLEASE
-# PLEASE let me use CSS, im not sure if it's allowed but PLEASE
-
 set_website_title("Bingo Website")
 
 BINGO_PAGE_CSS = """
@@ -139,31 +118,22 @@ def check_if_bingo() -> bool:
     global board_list
     global drawn_balls
 
-    # Build 5x5 grid of booleans: True if the box is considered checked
     grid = [[False]*5 for _ in range(5)]
     
     for box in board_list:
-        # FREE SPACE is always considered checked
         if box.row == 2 and box.col == 2:
             grid[box.row][box.col] = True
         else:
             try:
-                # Mark as checked if the number has been drawn
                 grid[box.row][box.col] = int(box.num) in drawn_balls
             except ValueError:
                 grid[box.row][box.col] = False
-
-    # Check rows
     for row in range(5):
         if all(grid[row]):
             return True
-
-    # Check columns
     for col in range(5):
         if all(grid[row][col] for row in range(5)):
             return True
-
-    # Check diagonals
     if all(grid[i][i] for i in range(5)):
         return True
     if all(grid[i][4-i] for i in range(5)):
